@@ -56,19 +56,40 @@ audio{width:100%;margin-top:10px}
 </head>
 <body>
 <header>
-  <span class="ver">v001 · 2026-10-31</span>
+  <span class="ver">v002 · 2026-10-31</span>
   <h1>🎸 베이스 타브 만들기</h1>
-  <p>노래 파일을 올리면 베이스 음을 찾아 타브 악보로 바꿔 줘요</p>
+  <p>유튜브 노래나 파일에서 베이스 음을 찾아 타브 악보로 바꿔 줘요</p>
 </header>
 <main>
   <section class="card setup">
-    <h2><span class="step">1</span>노래 파일 고르기</h2>
+    <h2><span class="step">1</span>노래 가져오기</h2>
+    <div class="chips" style="margin-bottom:12px">
+      <button class="chip on" data-src="yt">▶ 유튜브 링크</button>
+      <button class="chip" data-src="file">📁 내 파일</button>
+      <button class="chip" data-src="mic">🎤 마이크로 듣기</button>
+    </div>
+    <div id="srcYt">
+      <div class="row" style="flex-wrap:nowrap;gap:8px">
+        <input type="url" id="ytUrl" placeholder="유튜브 주소 붙여넣기" style="flex:1;font-size:17px;height:54px;border:1px solid #b8c0d0;border-radius:10px;padding:0 12px;min-width:0">
+        <button class="btn" id="ytLoad">불러오기</button>
+      </div>
+      <div id="ytWrap" class="hide" style="margin-top:10px;position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden"><div id="ytBox" style="width:100%;height:100%"></div></div>
+      <div id="ytInfo" class="muted" style="margin-top:8px"></div>
+      <div class="note" id="ytHow">PC 크롬에서 돼요. 「타브 만들기」를 누르면 화면 공유 창이 떠요. <b>「이 탭」</b>을 고르고 <b>「탭 오디오도 공유」</b>를 켠 뒤 「공유」를 누르면, 고른 구간을 재생하면서 소리를 따요.</div>
+    </div>
+    <div id="srcMic" class="hide">
+      <p class="muted" style="margin:0 0 10px">휴대폰에서 쓰는 방법이에요. 다른 기기(PC·스피커)로 노래를 크게 틀고, 아래 버튼을 눌러 들려주세요. 베이스가 잘 들리는 스피커일수록 정확해요. (최대 2분)</p>
+      <button class="btn big" id="micBtn">🎤 듣기 시작</button>
+      <div id="micInfo" class="muted" style="margin-top:8px"></div>
+    </div>
+    <div id="srcFile" class="hide">
     <label class="drop" id="drop">
       <b>여기를 눌러 노래 파일 선택</b>
       <small>mp3 · m4a · wav 등 (PC는 끌어다 놓아도 돼요)</small>
       <input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.flac,.ogg,.aac">
     </label>
     <div id="fileInfo" class="muted" style="margin-top:8px"></div>
+    </div>
     <audio id="player" controls class="hide"></audio>
   </section>
 
@@ -82,7 +103,7 @@ audio{width:100%;margin-top:10px}
           <option value="half4">4현 반음 내림 (E♭ A♭ D♭ G♭)</option>
           <option value="std5">5현 (B E A D G)</option>
         </select></div>
-      <div class="fld"><label>분석할 구간 (초)</label>
+      <div class="fld" id="rangeFld"><label>분석할 구간 (초) · 시작 / 끝</label>
         <div class="row" style="gap:6px;flex-wrap:nowrap">
           <input type="number" id="t0" min="0" value="0" style="width:50%" aria-label="시작 초">
           <input type="number" id="t1" min="0" value="" placeholder="끝까지" style="width:50%" aria-label="끝 초">
@@ -99,6 +120,7 @@ audio{width:100%;margin-top:10px}
     <div id="progBox" class="hide">
       <div class="prog"><div id="bar"></div></div>
       <div id="progTxt" class="muted"></div>
+      <button class="btn2 hide" id="stopCap" style="margin-top:8px;width:100%">⏹ 여기까지만 따기</button>
     </div>
     <div id="err" class="warnbox hide"></div>
   </section>
@@ -119,8 +141,8 @@ audio{width:100%;margin-top:10px}
         </div></div>
       <div class="fld"><label>한 줄에 마디 수</label>
         <select id="perRow"><option value="auto">화면에 맞게</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-      <div class="fld"><label>박자 쪼개기</label>
-        <select id="grid"><option value="4">16분음표 (자세히)</option><option value="2">8분음표 (간단히)</option></select></div>
+      <div class="fld"><label>난이도</label>
+        <select id="grid"><option value="1">쉬움 (한 박에 한 음, 낮은 프렛)</option><option value="2" selected>보통 (8분음표)</option><option value="4">어려움 (16분음표, 원곡대로)</option></select></div>
     </div>
     <div class="tabwrap"><div id="tabOut"></div></div>
     <div class="tools noprint">
@@ -135,7 +157,7 @@ audio{width:100%;margin-top:10px}
     </div>
     <div class="note noprint">
       <b>읽는 법</b> · 맨 위 줄이 가장 얇은 줄(G), 맨 아래가 가장 굵은 줄이에요. 숫자는 누를 프렛 번호, 0은 개방현이에요.
-      한 마디는 4박이고, 「-」 한 칸이 <span id="gridName">16분음표</span> 하나예요.
+      한 마디는 4박이고, 지금 난이도에서는 숫자 사이 한 칸이 <span id="gridName">8분음표</span> 하나예요.
     </div>
     <div class="warnbox noprint">
       <b>자동 채보의 한계</b> · 기계가 소리를 듣고 찾은 결과라 70~80% 정도 맞아요. 드럼(킥)이나 기타 소리를 베이스로 착각하기도 해요.
@@ -157,6 +179,88 @@ const MAX_FRET = 20;
 const SENS = { 1:['아주 적게',0.6,0.45], 2:['적게',0.5,0.38], 3:['보통',0.4,0.3], 4:['많이',0.32,0.24], 5:['아주 많이',0.25,0.18] };
 let audioFile = null, decoded = null, notes = [], onsetEnv = [], useLP = true, songName = '', lastTabText = '', analyzedOffset = 0;
 let BP = null;
+let srcMode = 'yt', ytPlayer = null, ytReadyP = null, ytVid = '', stopCap = false;
+
+// ---------- 가져오는 방법 고르기 ----------
+document.querySelectorAll('[data-src]').forEach(b => b.onclick = () => setSrc(b.dataset.src));
+function setSrc(m) {
+  srcMode = m;
+  document.querySelectorAll('[data-src]').forEach(x => x.classList.toggle('on', x.dataset.src === m));
+  $('#srcYt').classList.toggle('hide', m !== 'yt'); $('#srcFile').classList.toggle('hide', m !== 'file'); $('#srcMic').classList.toggle('hide', m !== 'mic');
+  $('#rangeFld').classList.toggle('hide', m === 'mic');
+  $('#player').classList.toggle('hide', !(m !== 'yt' && $('#player').src));
+  $('#go').textContent = m === 'yt' ? '▶ 유튜브에서 따서 타브 만들기' : '▶ 타브 악보 만들기';
+  $('#go').disabled = m === 'yt' ? !ytVid : !decoded;
+  if (m === 'yt' && !navigator.mediaDevices?.getDisplayMedia) $('#ytHow').innerHTML = '⚠ 이 기기(휴대폰)는 유튜브 소리를 바로 따지 못해요. <b>PC 크롬</b>에서 열거나, 「마이크로 듣기」를 써 주세요.';
+}
+// ---------- 유튜브 ----------
+function ytId(u) { const m = String(u).match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : (/^[A-Za-z0-9_-]{11}$/.test(u) ? u : null); }
+function loadYT() { if (ytReadyP) return ytReadyP; ytReadyP = new Promise(res => { window.onYouTubeIframeAPIReady = res; const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s); }); return ytReadyP; }
+$('#ytLoad').onclick = async () => {
+  const id = ytId($('#ytUrl').value.trim());
+  if (!id) { $('#ytInfo').textContent = '❌ 유튜브 주소가 아니에요. 주소를 다시 붙여넣어 주세요.'; return; }
+  $('#ytInfo').textContent = '불러오는 중…'; $('#ytWrap').classList.remove('hide');
+  await loadYT();
+  const ready = () => { ytVid = id; const d = ytPlayer.getVideoData ? ytPlayer.getVideoData() : {}; songName = d.title || '유튜브 노래';
+    const dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+    $('#ytInfo').innerHTML = '✅ <b>' + esc(songName) + '</b>' + (dur ? ' · 길이 ' + fmtT(dur) : '');
+    $('#t1').placeholder = dur ? '끝까지 (' + Math.floor(dur) + ')' : '끝까지'; if (srcMode === 'yt') $('#go').disabled = false; };
+  if (ytPlayer) { ytPlayer.cueVideoById(id); setTimeout(ready, 1500); }
+  else ytPlayer = new YT.Player('ytBox', { videoId: id, width: '100%', height: '100%', playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => setTimeout(ready, 300), onError: () => { $('#ytInfo').textContent = '❌ 이 영상은 다른 사이트에서 재생이 막혀 있어요. 다른 영상(가사 영상 등)을 골라 주세요.'; } } });
+};
+const waitFor = (fn, ms) => new Promise(res => { const t0 = Date.now(), iv = setInterval(() => { if (fn() || Date.now() - t0 > ms) { clearInterval(iv); res(fn()); } }, 100); });
+async function captureYT() {
+  if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('이 기기는 유튜브 소리 바로 따기를 못 해요. PC 크롬에서 열거나 「마이크로 듣기」를 써 주세요.');
+  const dur = ytPlayer.getDuration() || 600;
+  const t0 = Math.max(0, +$('#t0').value || 0), t1 = Math.min(dur, +$('#t1').value || dur);
+  if (t1 - t0 < 3) throw new Error('구간이 너무 짧아요 (3초 이상).');
+  setProg(0, '화면 공유 창에서 「이 탭」을 고르고 「탭 오디오도 공유」를 켜 주세요');
+  let st;
+  try { st = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, preferCurrentTab: true, selfBrowserSurface: 'include', systemAudio: 'include' }); }
+  catch (e) { throw new Error('공유를 취소했어요. 다시 누르고 「이 탭」을 골라 주세요.'); }
+  const at = st.getAudioTracks();
+  if (!at.length) { st.getTracks().forEach(t => t.stop()); throw new Error('소리가 공유되지 않았어요. 공유 창에서 「탭 오디오도 공유」를 켜고 다시 해 주세요.'); }
+  const rec = new MediaRecorder(new MediaStream(at)), chunks = [];
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  ytPlayer.seekTo(t0, true); ytPlayer.playVideo();
+  await waitFor(() => ytPlayer.getPlayerState() === 1, 10000);
+  const cs = ytPlayer.getCurrentTime(); rec.start(250); stopCap = false;
+  $('#stopCap').classList.remove('hide');
+  await new Promise(res => { const iv = setInterval(() => { const c = ytPlayer.getCurrentTime();
+    setProg(Math.min(1, (c - t0) / (t1 - t0)) * 0.3, '소리 따는 중… ' + fmtT(c - cs) + ' / ' + fmtT(t1 - t0) + ' (영상을 멈추지 마세요)');
+    if (c >= t1 || ytPlayer.getPlayerState() === 0 || stopCap || at[0].readyState === 'ended') { clearInterval(iv); res(); } }, 200); });
+  $('#stopCap').classList.add('hide');
+  ytPlayer.pauseVideo();
+  await new Promise(r => { rec.onstop = r; rec.stop(); });
+  st.getTracks().forEach(t => t.stop());
+  const blob = new Blob(chunks, { type: rec.mimeType });
+  if (blob.size < 2000) throw new Error('따온 소리가 없어요. 「탭 오디오도 공유」가 켜져 있는지 확인해 주세요.');
+  const ac = new AudioContext(); const buf = await ac.decodeAudioData(await blob.arrayBuffer()); ac.close();
+  return { buf, offset: cs };
+}
+// ---------- 마이크 ----------
+let micRec = null, micTimer = null;
+$('#micBtn').onclick = async () => {
+  if (micRec) { micRec.stop(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const chunks = []; micRec = new MediaRecorder(st);
+    micRec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    const t0 = Date.now();
+    micRec.onstop = async () => {
+      clearInterval(micTimer); st.getTracks().forEach(t => t.stop()); micRec = null;
+      $('#micBtn').textContent = '🎤 다시 듣기';
+      const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+      try { const ac = new (window.AudioContext || window.webkitAudioContext)(); decoded = await ac.decodeAudioData(await blob.arrayBuffer()); ac.close && ac.close(); }
+      catch { $('#micInfo').textContent = '❌ 녹음을 읽지 못했어요. 다시 해 주세요.'; return; }
+      songName = '마이크로 들은 노래'; const p = $('#player'); p.src = URL.createObjectURL(blob); p.classList.remove('hide');
+      $('#micInfo').textContent = '✅ ' + fmtT(decoded.duration) + ' 들었어요. 바로 분석할게요.';
+      $('#go').disabled = false; analyze();
+    };
+    micRec.start(250); $('#micBtn').textContent = '⏹ 그만 듣기 (분석 시작)';
+    micTimer = setInterval(() => { const s = (Date.now() - t0) / 1000; $('#micInfo').textContent = '듣는 중… ' + fmtT(s) + ' (최대 2분)'; if (s >= 120) micRec && micRec.stop(); }, 300);
+  } catch (e) { $('#micInfo').textContent = '❌ 마이크를 쓸 수 없어요. 브라우저에서 마이크 허용을 눌러 주세요.'; }
+};
 
 // ---------- 파일 고르기 ----------
 const fileIn = $('#file'), drop = $('#drop');
@@ -191,16 +295,24 @@ $('#sens').oninput = () => $('#sensV').textContent = SENS[$('#sens').value][0];
 // ---------- 분석 ----------
 $('#go').onclick = analyze;
 async function analyze() {
-  if (!decoded) return;
+  if (srcMode !== 'yt' && !decoded) return;
+  if (srcMode === 'yt' && !ytPlayer) return;
   const btn = $('#go'); btn.disabled = true; $('#err').classList.add('hide');
   $('#progBox').classList.remove('hide'); setProg(0, '분석 도구를 불러오는 중… (처음 한 번은 10~20초)');
   try {
-    if (!BP) BP = await import('https://esm.sh/@spotify/basic-pitch@1.0.1');
-    let t0 = Math.max(0, +$('#t0').value || 0);
-    let t1 = +$('#t1').value || decoded.duration;
-    t1 = Math.min(t1, decoded.duration);
+    const bpP = BP ? null : import('https://esm.sh/@spotify/basic-pitch@1.0.1');
+    let t0, t1;
+    if (srcMode === 'yt') {
+      const cap = await captureYT();
+      decoded = cap.buf; t0 = 0; t1 = decoded.duration; analyzedOffset = cap.offset;
+    } else if (srcMode === 'mic') { t0 = 0; t1 = decoded.duration; analyzedOffset = 0; }
+    else {
+      t0 = Math.max(0, +$('#t0').value || 0);
+      t1 = Math.min(+$('#t1').value || decoded.duration, decoded.duration);
+      analyzedOffset = t0;
+    }
     if (t1 - t0 < 2) throw new Error('구간이 너무 짧아요 (2초 이상).');
-    analyzedOffset = t0;
+    if (!BP) { setProg(0.3, '분석 도구를 불러오는 중…'); BP = await bpP; }
     setProg(0.02, '소리를 베이스용으로 다듬는 중…');
     const mono = await prepAudio(decoded, t0, t1, useLP);
     const model = new BP.BasicPitch(MODEL_URL);
@@ -305,14 +417,15 @@ function estimateBpm(env, fps) {
   return best;
 }
 // 줄·프렛 고르기: 손 이동이 가장 적게
-function assignFrets(seq, tun) {
+function assignFrets(seq, tun, easy) {
   const S = tun.midi;
   const opts = seq.map(n => { const o = []; S.forEach((open, s) => { const f = n.m - open; if (f >= 0 && f <= MAX_FRET) o.push({ s, f }); }); return o.length ? o : [{ s: 0, f: Math.max(0, n.m - S[0]) }]; });
   const cost = [], back = [];
   opts.forEach((os, i) => {
     cost[i] = []; back[i] = [];
     os.forEach((o, j) => {
-      const base = o.f * 0.08 + (o.f > 12 ? (o.f - 12) * 0.6 : 0) + (o.f === 0 ? -0.15 : 0);
+      const base = easy ? o.f * 0.25 + (o.f > 5 ? (o.f - 5) * 1.2 : 0) + (o.f === 0 ? -0.3 : 0)
+                        : o.f * 0.08 + (o.f > 12 ? (o.f - 12) * 0.6 : 0) + (o.f === 0 ? -0.15 : 0);
       if (i === 0) { cost[i][j] = base; back[i][j] = -1; return; }
       let bc = Infinity, bk = 0;
       opts[i - 1].forEach((p, k) => {
@@ -337,18 +450,22 @@ function render() {
   const tun = TUNINGS[$('#tuning').value];
   bpmNow = Math.min(240, Math.max(40, +$('#bpm').value || 100));
   slotsPerBeat = +$('#grid').value;
-  $('#gridName').textContent = slotsPerBeat === 4 ? '16분음표' : '8분음표';
+  $('#gridName').textContent = { 1: '4분음표', 2: '8분음표', 4: '16분음표' }[slotsPerBeat];
   const slotSec = 60 / bpmNow / slotsPerBeat, perBar = 4 * slotsPerBeat;
   // 첫 음을 박자 시작으로 맞춤
   const first = notes.length ? notes[0].t : 0;
   const origin = first - Math.floor(first / slotSec) * slotSec * 0; // 0초 기준 유지
-  const placed = []; const used = new Set();
+  // 한 칸에 음이 여럿이면: 어려움은 먼저 온 음, 쉬움·보통은 길고 또렷한 음
+  const bySlot = new Map();
   for (const n of notes) {
-    const k = Math.round((n.t - origin) / slotSec);
-    if (used.has(k)) continue; used.add(k);
-    placed.push({ k, m: n.m, t: n.t });
+    const pos = (n.t - origin) / slotSec, k = Math.round(pos);
+    if (slotsPerBeat < 4 && Math.abs(pos - k) > 0.3) continue; // 쉬움·보통: 박자에서 벗어난 음은 빼기
+    const sc = slotsPerBeat === 4 ? -n.t : n.d + n.o * 0.3 + (slotsPerBeat === 1 ? -Math.abs((n.t - origin) / slotSec - k) * 0.3 : 0);
+    const cur = bySlot.get(k);
+    if (!cur || sc > cur.sc) bySlot.set(k, { k, m: n.m, t: n.t, sc });
   }
-  const fr = assignFrets(placed, tun);
+  const placed = [...bySlot.values()].sort((a, b) => a.k - b.k);
+  const fr = assignFrets(placed, tun, slotsPerBeat === 1);
   placed.forEach((p, i) => { p.s = fr[i].s; p.f = fr[i].f; });
   const total = placed.length ? placed[placed.length - 1].k + 1 : perBar;
   const nBars = Math.max(1, Math.ceil(total / perBar));
@@ -369,7 +486,8 @@ function barLines(m, tun, perBar) {
   const lines = [];
   for (let s = nS - 1; s >= 0; s--) {
     let L = '';
-    for (let c = 0; c < perBar; c++) { const v = cells[s][c]; L += v.padEnd(w[c], '-') + '-'; if (slotsPerBeat === 4 && c % 4 === 3 && c < perBar - 1) L += ''; }
+    const sp = '-'.repeat(4 / slotsPerBeat);
+    for (let c = 0; c < perBar; c++) { const v = cells[s][c]; L += v.padEnd(w[c], '-') + sp; }
     lines.push(L);
   }
   return lines;
@@ -378,7 +496,7 @@ function drawTab(tun, perBar) {
   const nS = tun.midi.length;
   const nm = tun.midi.map((_, i) => tun.names[i]).reverse().map(x => x.padEnd(2, ' '));
   let per = $('#perRow').value;
-  if (per === 'auto') { const cw = 9.1, avail = $('#tabOut').clientWidth || ($('main').clientWidth - 50); per = Math.max(1, Math.min(4, Math.floor((avail / cw - 4) / (perBar * 1.2 * 2 + 1)))); }
+  if (per === 'auto') { const cw = 9.1, avail = $('#tabOut').clientWidth || ($('main').clientWidth - 50); per = Math.max(1, Math.min(4, Math.floor((avail / cw - 4) / (perBar * (1.1 + 4 / slotsPerBeat) + 1)))); }
   per = +per;
   let html = '', txt = (songName ? songName + ' - ' : '') + 'Bass TAB (' + tun.names.join(' ') + ', BPM ' + bpmNow + ')\n\n';
   for (let r = 0; r < measures.length; r += per) {
@@ -422,11 +540,19 @@ $('#playSyn').onclick = () => {
   synTimer = setInterval(() => { const el = synCtx.currentTime - t0; follow(el); if (el > end) stopSyn(); }, 100);
 };
 function stopSyn() { clearInterval(synTimer); if (synCtx) synCtx.close(); synCtx = null; $('#playSyn').textContent = '🔊 타브 소리로 듣기'; follow(-1); }
+let ytFollow = null;
 $('#playOrig').onclick = () => {
-  const p = $('#player'); stopSyn();
+  stopSyn();
+  if (srcMode === 'yt' && ytPlayer) {
+    ytPlayer.seekTo(analyzedOffset, true); ytPlayer.playVideo();
+    clearInterval(ytFollow); ytFollow = setInterval(() => { const s = ytPlayer.getPlayerState(); if (s === 1) follow(ytPlayer.getCurrentTime() - analyzedOffset); else if (s === 0 || s === 2) { clearInterval(ytFollow); } }, 200);
+    $('#ytWrap').scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
+  }
+  const p = $('#player');
   p.currentTime = analyzedOffset; p.play();
   p.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
+$('#stopCap').onclick = () => { stopCap = true; };
 $('#player').addEventListener('timeupdate', () => { if (!synCtx && measures.length) follow($('#player').currentTime - analyzedOffset); });
 function follow(sec) {
   const barSec = 60 / bpmNow * 4, bi = sec < 0 ? -1 : Math.floor(sec / barSec);
@@ -461,7 +587,8 @@ function save(blob, name) { const a = document.createElement('a'); a.href = URL.
 function toast(t) { const d = document.createElement('div'); d.textContent = t; d.style.cssText = 'position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#0D1C42;color:#fff;padding:12px 20px;border-radius:12px;font-size:17px;z-index:9'; document.body.appendChild(d); setTimeout(() => d.remove(), 1800); }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmtT(s) { s = Math.round(s); return Math.floor(s / 60) + '분 ' + (s % 60) + '초'; }
-window.__bt = { get notes() { return notes; }, get measures() { return measures; }, analyze, pick };
+setSrc('yt');
+window.__bt = { setSrc, get notes() { return notes; }, get measures() { return measures; }, analyze, pick };
 </script>
 </body>
 </html>
