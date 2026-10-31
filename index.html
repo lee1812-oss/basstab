@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>베이스 타브 만들기</title>
+<meta name="theme-color" content="#0D1C42">
+<style>
+:root{--navy:#010736;--navy2:#0D1C42;--navy3:#22396F;--cream:#FCF1D0;--gold:#BF913C;--ok:#1f8a4c;--warn:#c0392b;--line:#d9dde6;--txt:#111827;--sub:#4b5563}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:17px;color:var(--txt);background:#f4f5f8;word-break:keep-all;overflow-wrap:break-word}
+header{background:var(--navy2);color:#fff;padding:18px 16px 16px}
+header h1{margin:0;font-size:24px;letter-spacing:-.5px}
+header p{margin:6px 0 0;color:var(--cream);font-size:15px}
+.ver{float:right;font-size:12px;color:#c9d2ea;margin-top:4px}
+main{max-width:1100px;margin:0 auto;padding:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:19px;color:var(--navy2)}
+.step{display:inline-block;background:var(--navy3);color:#fff;border-radius:99px;width:28px;height:28px;text-align:center;line-height:28px;font-size:15px;margin-right:6px}
+.drop{display:block;border:2px dashed var(--navy3);border-radius:12px;padding:22px 14px;text-align:center;background:#f8f9fd;cursor:pointer}
+.drop b{font-size:19px;color:var(--navy2)}
+.drop small{display:block;color:var(--sub);margin-top:6px;font-size:15px}
+input[type=file]{display:none}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:140px;flex:1}
+.fld label{font-size:15px;color:var(--sub);font-weight:600}
+select,input[type=number]{font-size:17px;height:48px;border:1px solid #b8c0d0;border-radius:10px;padding:0 10px;background:#fff;color:var(--txt)}
+input[type=range]{width:100%;height:36px}
+button{font-size:17px;min-height:54px;border-radius:12px;border:0;padding:0 18px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn{background:var(--navy2);color:#fff}
+.btn:disabled{background:#9aa3b5;cursor:default}
+.btn2{background:#fff;color:var(--navy2);border:2px solid var(--navy3)}
+.big{width:100%;font-size:19px}
+.muted{color:var(--sub);font-size:15px}
+.hide{display:none!important}
+.prog{height:14px;background:#e6e9f0;border-radius:99px;overflow:hidden;margin:12px 0 6px}
+.prog>div{height:100%;width:0;background:linear-gradient(90deg,var(--navy3),var(--gold));transition:width .2s}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.stat div{background:#f3f5fa;border-radius:10px;padding:8px 12px;font-size:15px}
+.stat b{font-size:20px;color:var(--navy2);display:block}
+.tabwrap{overflow-x:auto;background:#fffdf6;border:1px solid #eadfba;border-radius:10px;padding:10px 6px}
+pre.tab{margin:0;font-family:"D2Coding","Consolas","Menlo","Courier New",monospace;font-size:15px;line-height:1.35;color:#111}
+.sys{padding:6px 4px 10px;border-radius:8px}
+.sys.now{background:#fff1c7}
+.mno{color:var(--gold);font-weight:700}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tools button{flex:1;min-width:150px}
+.note{background:#eef4ff;border-left:5px solid var(--navy3);padding:10px 12px;border-radius:8px;font-size:15px;color:#1f2a44;margin-top:10px}
+.warnbox{background:#fff4f2;border-left:5px solid var(--warn);padding:10px 12px;border-radius:8px;font-size:15px;margin-top:10px}
+audio{width:100%;margin-top:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:2px solid #b8c0d0;border-radius:99px;padding:8px 14px;font-size:16px;background:#fff;min-height:44px;font-weight:600;color:var(--sub)}
+.chip.on{border-color:var(--navy2);background:var(--navy2);color:#fff}
+@media print{header,.noprint,.card.setup{display:none!important}body{background:#fff}.card{border:0;padding:0}.tabwrap{border:0;background:#fff;overflow:visible}.sys{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <span class="ver">v001 · 2026-10-31</span>
+  <h1>🎸 베이스 타브 만들기</h1>
+  <p>노래 파일을 올리면 베이스 음을 찾아 타브 악보로 바꿔 줘요</p>
+</header>
+<main>
+  <section class="card setup">
+    <h2><span class="step">1</span>노래 파일 고르기</h2>
+    <label class="drop" id="drop">
+      <b>여기를 눌러 노래 파일 선택</b>
+      <small>mp3 · m4a · wav 등 (PC는 끌어다 놓아도 돼요)</small>
+      <input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.flac,.ogg,.aac">
+    </label>
+    <div id="fileInfo" class="muted" style="margin-top:8px"></div>
+    <audio id="player" controls class="hide"></audio>
+  </section>
+
+  <section class="card setup">
+    <h2><span class="step">2</span>설정</h2>
+    <div class="row">
+      <div class="fld"><label>베이스 종류 · 튜닝</label>
+        <select id="tuning">
+          <option value="std4">4현 표준 (E A D G)</option>
+          <option value="drop4">4현 드롭 D (D A D G)</option>
+          <option value="half4">4현 반음 내림 (E♭ A♭ D♭ G♭)</option>
+          <option value="std5">5현 (B E A D G)</option>
+        </select></div>
+      <div class="fld"><label>분석할 구간 (초)</label>
+        <div class="row" style="gap:6px;flex-wrap:nowrap">
+          <input type="number" id="t0" min="0" value="0" style="width:50%" aria-label="시작 초">
+          <input type="number" id="t1" min="0" value="" placeholder="끝까지" style="width:50%" aria-label="끝 초">
+        </div></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="fld"><label>베이스만 걸러 듣기 (추천: 켬)</label>
+        <div class="chips"><button class="chip on" data-lp="1">켬</button><button class="chip" data-lp="0">끔</button></div></div>
+      <div class="fld"><label>민감도 <span id="sensV">보통</span></label>
+        <input type="range" id="sens" min="1" max="5" value="3"></div>
+    </div>
+    <p class="muted" style="margin:10px 0 0">긴 노래는 휴대폰에서 시간이 걸려요. 처음엔 30~60초 구간으로 시험해 보세요.</p>
+    <button class="btn big" id="go" disabled style="margin-top:14px">▶ 타브 악보 만들기</button>
+    <div id="progBox" class="hide">
+      <div class="prog"><div id="bar"></div></div>
+      <div id="progTxt" class="muted"></div>
+    </div>
+    <div id="err" class="warnbox hide"></div>
+  </section>
+
+  <section class="card hide" id="result">
+    <h2><span class="step noprint">3</span><span id="songTitle">타브 악보</span></h2>
+    <div class="stat noprint">
+      <div>찾은 음<b id="sNotes">0</b></div>
+      <div>빠르기(BPM)<b id="sBpm">-</b></div>
+      <div>마디<b id="sBars">0</b></div>
+    </div>
+    <div class="row noprint" style="margin-bottom:12px">
+      <div class="fld" style="flex-basis:100%"><label>빠르기 BPM (자동으로 찾았어요, 틀리면 고치기)</label>
+        <div class="row" style="gap:6px;flex-wrap:nowrap">
+          <button class="btn2" id="bpmHalf" style="min-width:64px">÷2</button>
+          <input type="number" id="bpm" min="40" max="240" style="flex:1">
+          <button class="btn2" id="bpmDbl" style="min-width:64px">×2</button>
+        </div></div>
+      <div class="fld"><label>한 줄에 마디 수</label>
+        <select id="perRow"><option value="auto">화면에 맞게</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+      <div class="fld"><label>박자 쪼개기</label>
+        <select id="grid"><option value="4">16분음표 (자세히)</option><option value="2">8분음표 (간단히)</option></select></div>
+    </div>
+    <div class="tabwrap"><div id="tabOut"></div></div>
+    <div class="tools noprint">
+      <button class="btn" id="playSyn">🔊 타브 소리로 듣기</button>
+      <button class="btn2" id="playOrig">🎵 원곡과 같이 보기</button>
+    </div>
+    <div class="tools noprint">
+      <button class="btn2" id="copy">📋 글자로 복사</button>
+      <button class="btn2" id="dlTxt">💾 텍스트 저장</button>
+      <button class="btn2" id="dlMidi">🎹 MIDI 저장</button>
+      <button class="btn2" id="print">🖨 인쇄 · PDF</button>
+    </div>
+    <div class="note noprint">
+      <b>읽는 법</b> · 맨 위 줄이 가장 얇은 줄(G), 맨 아래가 가장 굵은 줄이에요. 숫자는 누를 프렛 번호, 0은 개방현이에요.
+      한 마디는 4박이고, 「-」 한 칸이 <span id="gridName">16분음표</span> 하나예요.
+    </div>
+    <div class="warnbox noprint">
+      <b>자동 채보의 한계</b> · 기계가 소리를 듣고 찾은 결과라 70~80% 정도 맞아요. 드럼(킥)이나 기타 소리를 베이스로 착각하기도 해요.
+      「타브 소리로 듣기」로 원곡과 비교해서 틀린 부분은 귀로 고쳐 주세요.
+    </div>
+  </section>
+</main>
+
+<script type="module">
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/model/model.json';
+const $ = s => document.querySelector(s);
+const TUNINGS = { // 굵은 줄 → 얇은 줄 (MIDI 번호)
+  std4: { names: ['E','A','D','G'], midi: [28,33,38,43] },
+  drop4:{ names: ['D','A','D','G'], midi: [26,33,38,43] },
+  half4:{ names: ['Eb','Ab','Db','Gb'], midi: [27,32,37,42] },
+  std5: { names: ['B','E','A','D','G'], midi: [23,28,33,38,43] },
+};
+const MAX_FRET = 20;
+const SENS = { 1:['아주 적게',0.6,0.45], 2:['적게',0.5,0.38], 3:['보통',0.4,0.3], 4:['많이',0.32,0.24], 5:['아주 많이',0.25,0.18] };
+let audioFile = null, decoded = null, notes = [], onsetEnv = [], useLP = true, songName = '', lastTabText = '', analyzedOffset = 0;
+let BP = null;
+
+// ---------- 파일 고르기 ----------
+const fileIn = $('#file'), drop = $('#drop');
+fileIn.addEventListener('change', e => pick(e.target.files[0]));
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.background = '#eef1fb'; });
+drop.addEventListener('dragleave', () => drop.style.background = '');
+drop.addEventListener('drop', e => { e.preventDefault(); drop.style.background = ''; pick(e.dataTransfer.files[0]); });
+async function pick(f) {
+  if (!f) return;
+  audioFile = f; songName = f.name.replace(/\.[^.]+$/, '');
+  $('#fileInfo').textContent = '불러오는 중… ' + f.name;
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    decoded = await ac.decodeAudioData(await f.arrayBuffer());
+    ac.close && ac.close();
+    const d = decoded.duration;
+    $('#fileInfo').innerHTML = '✅ <b>' + esc(f.name) + '</b> · 길이 ' + fmtT(d);
+    $('#t1').placeholder = '끝까지 (' + Math.floor(d) + ')';
+    const p = $('#player'); p.src = URL.createObjectURL(f); p.classList.remove('hide');
+    $('#go').disabled = false;
+  } catch (e) {
+    $('#fileInfo').textContent = '❌ 이 파일은 열 수 없어요. mp3나 m4a로 다시 골라 주세요.';
+    decoded = null; $('#go').disabled = true;
+  }
+}
+document.querySelectorAll('[data-lp]').forEach(b => b.onclick = () => {
+  useLP = b.dataset.lp === '1';
+  document.querySelectorAll('[data-lp]').forEach(x => x.classList.toggle('on', x === b));
+});
+$('#sens').oninput = () => $('#sensV').textContent = SENS[$('#sens').value][0];
+
+// ---------- 분석 ----------
+$('#go').onclick = analyze;
+async function analyze() {
+  if (!decoded) return;
+  const btn = $('#go'); btn.disabled = true; $('#err').classList.add('hide');
+  $('#progBox').classList.remove('hide'); setProg(0, '분석 도구를 불러오는 중… (처음 한 번은 10~20초)');
+  try {
+    if (!BP) BP = await import('https://esm.sh/@spotify/basic-pitch@1.0.1');
+    let t0 = Math.max(0, +$('#t0').value || 0);
+    let t1 = +$('#t1').value || decoded.duration;
+    t1 = Math.min(t1, decoded.duration);
+    if (t1 - t0 < 2) throw new Error('구간이 너무 짧아요 (2초 이상).');
+    analyzedOffset = t0;
+    setProg(0.02, '소리를 베이스용으로 다듬는 중…');
+    const mono = await prepAudio(decoded, t0, t1, useLP);
+    const model = new BP.BasicPitch(MODEL_URL);
+    const frames = [], onsets = [], contours = [];
+    const tStart = performance.now();
+    await model.evaluateModel(mono, (f, o, c) => { frames.push(...f); onsets.push(...o); contours.push(...c); },
+      p => { const el = (performance.now() - tStart) / 1000; const left = p > 0.05 ? el / p * (1 - p) : 0;
+             setProg(0.05 + p * 0.9, '음 찾는 중… ' + Math.round(p * 100) + '%' + (left > 3 ? ' · 약 ' + Math.ceil(left) + '초 남음' : '')); });
+    setProg(0.96, '악보로 정리하는 중…');
+    const [, onTh, frTh] = SENS[$('#sens').value];
+    const tun = TUNINGS[$('#tuning').value];
+    const lo = tun.midi[0] - 1, hi = tun.midi[tun.midi.length - 1] + MAX_FRET;
+    let poly = BP.outputToNotesPoly(frames, onsets, onTh, frTh, 5, true, midiHz(hi + 0.5), midiHz(lo - 0.5), true);
+    let ev = BP.noteFramesToTime(BP.addPitchBendsToNoteEvents(contours, poly));
+    const fps = 22050 / 256;
+    const onsetAt = (t, m) => { const f = Math.round(t * fps); let mx = 0; for (let d = -2; d <= 2; d++) { const r = onsets[f + d]; if (r && r[m - 21] > mx) mx = r[m - 21]; } return mx; };
+    notes = cleanUp(toMono(ev.map(n => ({ t: n.startTimeSeconds, d: n.durationSeconds, m: n.pitchMidi, a: n.amplitude, o: onsetAt(n.startTimeSeconds, n.pitchMidi) }))
+      .filter(n => n.m >= lo && n.m <= hi)));
+    // 박자 추정용 시작점 신호
+    onsetEnv = onsets.map(r => { let s = 0; for (let i = 0; i < 40; i++) s += r[i]; return s; });
+    const bpm = estimateBpm(onsetEnv, 22050 / 256);
+    $('#bpm').value = bpm;
+    setProg(1, '완료!');
+    render();
+    $('#result').classList.remove('hide');
+    $('#result').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    console.error(e);
+    $('#err').textContent = '❌ 분석 중 문제가 생겼어요: ' + (e.message || e) + ' · 구간을 짧게 해서 다시 해 보세요.';
+    $('#err').classList.remove('hide');
+  } finally { btn.disabled = false; setTimeout(() => $('#progBox').classList.add('hide'), 1500); }
+}
+function setProg(p, t) { $('#bar').style.width = Math.round(p * 100) + '%'; $('#progTxt').textContent = t; }
+async function prepAudio(buf, t0, t1, lp) {
+  const SR = 22050, len = Math.ceil((t1 - t0) * SR);
+  const off = new OfflineAudioContext(1, len, SR);
+  const src = off.createBufferSource(); src.buffer = buf;
+  let node = src;
+  if (lp) {
+    const hp = off.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 28; hp.Q.value = 0.7;
+    const l1 = off.createBiquadFilter(); l1.type = 'lowpass'; l1.frequency.value = 400; l1.Q.value = 0.7;
+    const l2 = off.createBiquadFilter(); l2.type = 'lowpass'; l2.frequency.value = 400; l2.Q.value = 0.7;
+    node.connect(hp); hp.connect(l1); l1.connect(l2); node = l2;
+  }
+  node.connect(off.destination);
+  src.start(0, t0, t1 - t0);
+  const out = await off.startRendering();
+  const d = out.getChannelData(0);
+  let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  if (peak > 0) { const g = 0.9 / peak; for (let i = 0; i < d.length; i++) d[i] *= g; }
+  return d;
+}
+const midiHz = m => 440 * Math.pow(2, (m - 69) / 12);
+// 한 번에 한 음만 (베이스 라인): 겹치면 더 낮고 센 음을 남김
+function toMono(arr) {
+  arr.sort((a, b) => a.t - b.t || a.m - b.m);
+  const out = [];
+  for (const n of arr) {
+    const p = out[out.length - 1];
+    if (p && n.t < p.t + 0.06) { // 거의 같은 시각에 시작
+      const sp = p.a - (p.m - 20) * 0.004, sn = n.a - (n.m - 20) * 0.004;
+      if (sn > sp) out[out.length - 1] = n;
+      continue;
+    }
+    if (p && p.t + p.d > n.t) p.d = Math.max(0.05, n.t - p.t);
+    out.push({ ...n });
+  }
+  return out;
+}
+// 같은 음이 잘게 쪼개진 조각 합치기 + 옥타브 위 유령 음 지우기
+function cleanUp(arr) {
+  let a = arr.filter((n, i) => {
+    const p = arr[i - 1], q = arr[i + 1];
+    const oct = x => x && x.m !== n.m && Math.abs(x.m - n.m) % 12 === 0;
+    return !(n.o < 0.36 && n.d < 0.14 && (oct(p) || oct(q)));
+  });
+  const out = [];
+  for (const n of a) {
+    const p = out[out.length - 1];
+    if (p && p.m === n.m && n.t - p.t < 0.22 && n.t <= p.t + p.d + 0.05) {
+      if (n.t - p.t < 0.1 && n.o >= p.o) { n.d = n.t + n.d - n.t; out[out.length - 1] = n; continue; } // 아주 가까우면 더 또렷한 쪽만
+      if (n.t - p.t < 0.1 || n.o < 0.8 * p.o) { p.d = n.t + n.d - p.t; continue; }          // 뒤 조각이 약함 → 앞 음에 붙임
+      if (p.o < 0.8 * n.o) { n.d = n.t + n.d - n.t; out[out.length - 1] = n; continue; } // 앞 조각이 약함 → 뒤 음만 남김
+    }
+    out.push(n);
+  }
+  return out;
+}
+function estimateBpm(env, fps) {
+  const n = env.length; if (n < fps * 4) return 100;
+  const mean = env.reduce((a, b) => a + b, 0) / n;
+  const x = env.map(v => Math.max(0, v - mean));
+  let best = 100, bestV = -1;
+  for (let bpm = 60; bpm <= 180; bpm++) {
+    const lag = fps * 60 / bpm, L = Math.floor(lag), fr = lag - L;
+    let s = 0;
+    for (let i = 0; i + L + 1 < n; i++) s += x[i] * (x[i + L] * (1 - fr) + x[i + L + 1] * fr);
+    s /= (n - L);
+    const w = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 110) / 0.6, 2)); // 보통 빠르기 쪽을 조금 더 믿음
+    if (s * w > bestV) { bestV = s * w; best = bpm; }
+  }
+  return best;
+}
+// 줄·프렛 고르기: 손 이동이 가장 적게
+function assignFrets(seq, tun) {
+  const S = tun.midi;
+  const opts = seq.map(n => { const o = []; S.forEach((open, s) => { const f = n.m - open; if (f >= 0 && f <= MAX_FRET) o.push({ s, f }); }); return o.length ? o : [{ s: 0, f: Math.max(0, n.m - S[0]) }]; });
+  const cost = [], back = [];
+  opts.forEach((os, i) => {
+    cost[i] = []; back[i] = [];
+    os.forEach((o, j) => {
+      const base = o.f * 0.08 + (o.f > 12 ? (o.f - 12) * 0.6 : 0) + (o.f === 0 ? -0.15 : 0);
+      if (i === 0) { cost[i][j] = base; back[i][j] = -1; return; }
+      let bc = Infinity, bk = 0;
+      opts[i - 1].forEach((p, k) => {
+        const pf = p.f || o.f, of = o.f || p.f;
+        const move = Math.abs(of - pf) + Math.abs(o.s - p.s) * 0.3;
+        const c = cost[i - 1][k] + move + base;
+        if (c < bc) { bc = c; bk = k; }
+      });
+      cost[i][j] = bc; back[i][j] = bk;
+    });
+  });
+  const res = new Array(seq.length);
+  if (!seq.length) return res;
+  let i = seq.length - 1, j = cost[i].indexOf(Math.min(...cost[i]));
+  for (; i >= 0; i--) { res[i] = opts[i][j]; j = back[i][j]; }
+  return res;
+}
+
+// ---------- 악보 그리기 ----------
+let measures = [], bpmNow = 100, slotsPerBeat = 4;
+function render() {
+  const tun = TUNINGS[$('#tuning').value];
+  bpmNow = Math.min(240, Math.max(40, +$('#bpm').value || 100));
+  slotsPerBeat = +$('#grid').value;
+  $('#gridName').textContent = slotsPerBeat === 4 ? '16분음표' : '8분음표';
+  const slotSec = 60 / bpmNow / slotsPerBeat, perBar = 4 * slotsPerBeat;
+  // 첫 음을 박자 시작으로 맞춤
+  const first = notes.length ? notes[0].t : 0;
+  const origin = first - Math.floor(first / slotSec) * slotSec * 0; // 0초 기준 유지
+  const placed = []; const used = new Set();
+  for (const n of notes) {
+    const k = Math.round((n.t - origin) / slotSec);
+    if (used.has(k)) continue; used.add(k);
+    placed.push({ k, m: n.m, t: n.t });
+  }
+  const fr = assignFrets(placed, tun);
+  placed.forEach((p, i) => { p.s = fr[i].s; p.f = fr[i].f; });
+  const total = placed.length ? placed[placed.length - 1].k + 1 : perBar;
+  const nBars = Math.max(1, Math.ceil(total / perBar));
+  measures = [];
+  for (let b = 0; b < nBars; b++) measures.push({ start: b * perBar * slotSec, notes: [] });
+  placed.forEach(p => measures[Math.floor(p.k / perBar)].notes.push({ slot: p.k % perBar, s: p.s, f: p.f }));
+  $('#sNotes').textContent = placed.length; $('#sBpm').textContent = bpmNow; $('#sBars').textContent = nBars;
+  $('#songTitle').textContent = songName ? '「' + songName + '」 베이스 타브' : '베이스 타브';
+  drawTab(tun, perBar);
+}
+function barLines(m, tun, perBar) {
+  const nS = tun.midi.length;
+  const cells = Array.from({ length: nS }, () => Array(perBar).fill('-'));
+  m.notes.forEach(n => { cells[n.s][n.slot] = String(n.f); });
+  // 칸 너비: 두 자리 프렛이 있는 칸은 2칸
+  const w = Array(perBar).fill(1);
+  for (let c = 0; c < perBar; c++) for (let s = 0; s < nS; s++) if (cells[s][c].length > 1) w[c] = 2;
+  const lines = [];
+  for (let s = nS - 1; s >= 0; s--) {
+    let L = '';
+    for (let c = 0; c < perBar; c++) { const v = cells[s][c]; L += v.padEnd(w[c], '-') + '-'; if (slotsPerBeat === 4 && c % 4 === 3 && c < perBar - 1) L += ''; }
+    lines.push(L);
+  }
+  return lines;
+}
+function drawTab(tun, perBar) {
+  const nS = tun.midi.length;
+  const nm = tun.midi.map((_, i) => tun.names[i]).reverse().map(x => x.padEnd(2, ' '));
+  let per = $('#perRow').value;
+  if (per === 'auto') { const cw = 9.1, avail = $('#tabOut').clientWidth || ($('main').clientWidth - 50); per = Math.max(1, Math.min(4, Math.floor((avail / cw - 4) / (perBar * 1.2 * 2 + 1)))); }
+  per = +per;
+  let html = '', txt = (songName ? songName + ' - ' : '') + 'Bass TAB (' + tun.names.join(' ') + ', BPM ' + bpmNow + ')\n\n';
+  for (let r = 0; r < measures.length; r += per) {
+    const group = measures.slice(r, r + per);
+    const rows = Array.from({ length: nS }, (_, i) => nm[i] + '|');
+    group.forEach(m => { const ls = barLines(m, tun, perBar); ls.forEach((l, i) => rows[i] += l + '|'); });
+    let head = '   ' + group.map((m, gi) => { const ls = barLines(m, tun, perBar); return String(r + gi + 1).padEnd(ls[0].length + 1, ' '); }).join('');
+    html += '<div class="sys" data-r="' + r + '" data-n="' + group.length + '"><pre class="tab"><span class="mno">' + esc(head) + '</span>\n' + esc(rows.join('\n')) + '</pre></div>';
+    txt += head + '\n' + rows.join('\n') + '\n\n';
+  }
+  $('#tabOut').innerHTML = html; lastTabText = txt;
+}
+['#perRow', '#grid'].forEach(s => $(s).onchange = render);
+$('#bpm').onchange = render;
+$('#bpmHalf').onclick = () => { $('#bpm').value = Math.max(40, Math.round(+$('#bpm').value / 2)); render(); };
+$('#bpmDbl').onclick = () => { $('#bpm').value = Math.min(240, Math.round(+$('#bpm').value * 2)); render(); };
+$('#tuning').onchange = () => { if (notes.length) render(); };
+window.addEventListener('resize', () => { if (measures.length && $('#perRow').value === 'auto') render(); });
+
+// ---------- 듣기 ----------
+let synCtx = null, synTimer = null;
+$('#playSyn').onclick = () => {
+  if (synCtx) { stopSyn(); return; }
+  const tun = TUNINGS[$('#tuning').value];
+  synCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const slotSec = 60 / bpmNow / slotsPerBeat, perBar = 4 * slotsPerBeat, t0 = synCtx.currentTime + 0.2;
+  const master = synCtx.createGain(); master.gain.value = 0.5; master.connect(synCtx.destination);
+  const all = [];
+  measures.forEach((m, bi) => m.notes.forEach(n => all.push({ k: bi * perBar + n.slot, m: tun.midi[n.s] + n.f })));
+  all.forEach((n, i) => {
+    const st = t0 + n.k * slotSec, nx = all[i + 1] ? t0 + all[i + 1].k * slotSec : st + slotSec * 2;
+    const du = Math.min(nx - st, slotSec * 4) * 0.95;
+    const o = synCtx.createOscillator(), o2 = synCtx.createOscillator(), g = synCtx.createGain(), f = synCtx.createBiquadFilter();
+    o.type = 'sawtooth'; o2.type = 'sine'; o.frequency.value = midiHz(n.m); o2.frequency.value = midiHz(n.m);
+    f.type = 'lowpass'; f.frequency.setValueAtTime(1200, st); f.frequency.exponentialRampToValueAtTime(250, st + du);
+    g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(0.5, st + 0.01); g.gain.exponentialRampToValueAtTime(0.01, st + du);
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(master); o.start(st); o2.start(st); o.stop(st + du + 0.05); o2.stop(st + du + 0.05);
+  });
+  $('#playSyn').textContent = '⏹ 멈추기';
+  const end = all.length ? all[all.length - 1].k * slotSec + 2 : 1;
+  synTimer = setInterval(() => { const el = synCtx.currentTime - t0; follow(el); if (el > end) stopSyn(); }, 100);
+};
+function stopSyn() { clearInterval(synTimer); if (synCtx) synCtx.close(); synCtx = null; $('#playSyn').textContent = '🔊 타브 소리로 듣기'; follow(-1); }
+$('#playOrig').onclick = () => {
+  const p = $('#player'); stopSyn();
+  p.currentTime = analyzedOffset; p.play();
+  p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+$('#player').addEventListener('timeupdate', () => { if (!synCtx && measures.length) follow($('#player').currentTime - analyzedOffset); });
+function follow(sec) {
+  const barSec = 60 / bpmNow * 4, bi = sec < 0 ? -1 : Math.floor(sec / barSec);
+  document.querySelectorAll('.sys').forEach(el => {
+    const r = +el.dataset.r, n = +el.dataset.n, on = bi >= r && bi < r + n;
+    if (on && !el.classList.contains('now')) { el.classList.add('now'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    else if (!on) el.classList.remove('now');
+  });
+}
+
+// ---------- 저장 ----------
+$('#copy').onclick = async () => { try { await navigator.clipboard.writeText(lastTabText); toast('복사했어요'); } catch { toast('복사가 안 돼요. 텍스트 저장을 써 주세요'); } };
+$('#dlTxt').onclick = () => save(new Blob([lastTabText], { type: 'text/plain;charset=utf-8' }), (songName || 'bass') + '_베이스타브.txt');
+$('#print').onclick = () => window.print();
+$('#dlMidi').onclick = () => {
+  const tun = TUNINGS[$('#tuning').value], perBar = 4 * slotsPerBeat, slotTicks = 480 / slotsPerBeat;
+  const ev = []; measures.forEach((m, bi) => m.notes.forEach(n => ev.push({ k: bi * perBar + n.slot, m: tun.midi[n.s] + n.f })));
+  const trk = []; let last = 0;
+  const vlq = v => { const b = [v & 0x7f]; while (v >>= 7) b.unshift((v & 0x7f) | 0x80); return b; };
+  const us = Math.round(60000000 / bpmNow);
+  trk.push(0, 0xff, 0x51, 3, (us >> 16) & 255, (us >> 8) & 255, us & 255, 0, 0xc0, 33);
+  ev.forEach((e, i) => {
+    const on = e.k * slotTicks, nx = ev[i + 1] ? ev[i + 1].k * slotTicks : on + slotTicks * 2, off = on + Math.max(1, Math.min(nx - on, slotTicks * 4) - 10);
+    trk.push(...vlq(on - last), 0x90, e.m, 96); trk.push(...vlq(off - on), 0x80, e.m, 0); last = off;
+  });
+  trk.push(0, 0xff, 0x2f, 0);
+  const hdr = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 480 >> 8, 480 & 255];
+  const L = trk.length, th = [0x4d, 0x54, 0x72, 0x6b, (L >>> 24) & 255, (L >> 16) & 255, (L >> 8) & 255, L & 255];
+  save(new Blob([new Uint8Array([...hdr, ...th, ...trk])], { type: 'audio/midi' }), (songName || 'bass') + '_베이스.mid');
+};
+function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+function toast(t) { const d = document.createElement('div'); d.textContent = t; d.style.cssText = 'position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#0D1C42;color:#fff;padding:12px 20px;border-radius:12px;font-size:17px;z-index:9'; document.body.appendChild(d); setTimeout(() => d.remove(), 1800); }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function fmtT(s) { s = Math.round(s); return Math.floor(s / 60) + '분 ' + (s % 60) + '초'; }
+window.__bt = { get notes() { return notes; }, get measures() { return measures; }, analyze, pick };
+</script>
+</body>
+</html>
